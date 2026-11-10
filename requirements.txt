@@ -1,0 +1,4 @@
+# Astro Runtime includes the following pre-installed providers packages: https://www.astronomer.io/docs/astro/runtime-image-architecture#provider-packages
+# Python packages needed by the currency exchange ETL DAG (installed into the Airflow image at build time)
+requests>=2.31,<3
+pymongo>=4.10,<5
