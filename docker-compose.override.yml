@@ -1,0 +1,53 @@
+services:
+  # ---------------------------------------------------------------
+  # MongoDB - primary database that stores the exchange rates
+  # ---------------------------------------------------------------
+  mongodb:
+    image: mongo:7.0
+    restart: unless-stopped
+    labels:
+      project: "currency-exchange-etl"
+      description: "MongoDB database storing daily currency exchange rates"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    ports:
+      - "27017:27017"
+    # Persistent storage: data survives container restarts / `astro dev stop`
+    volumes:
+      - mongo_data:/data/db
+    # Docker networking: same network as the Airflow containers,
+    # so the DAG can reach MongoDB at hostname "mongodb"
+    networks:
+      - airflow
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------
+  # Mongo Express - web UI for browsing MongoDB (http://localhost:8081)
+  # ---------------------------------------------------------------
+  mongo-express:
+    image: mongo-express:1.0.2
+    restart: unless-stopped
+    labels:
+      project: "currency-exchange-etl"
+      description: "Mongo Express web admin interface for MongoDB"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongodb:27017/
+      ME_CONFIG_BASICAUTH_ENABLED: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    ports:
+      - "8081:8081"
+    networks:
+      - airflow
+
+volumes:
+  mongo_data:
+    driver: local
